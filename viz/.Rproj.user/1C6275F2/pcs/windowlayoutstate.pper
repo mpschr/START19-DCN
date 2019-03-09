@@ -6,9 +6,9 @@
         "windowheight" : 768
     },
     "right" : {
-        "panelheight" : 862,
-        "splitterpos" : 543,
-        "topwindowstate" : "NORMAL",
-        "windowheight" : 900
+        "panelheight" : 730,
+        "splitterpos" : 459,
+        "topwindowstate" : "MAXIMIZE",
+        "windowheight" : 768
     }
 }

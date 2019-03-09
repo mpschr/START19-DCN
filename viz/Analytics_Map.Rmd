@@ -30,6 +30,7 @@ cups_per_day <- read_delim(paste0(wd, "/04\ Git/START19-DCN/data_analysis/cups_p
                            escape_double = FALSE, 
                            col_types = cols(`PLZ To` = col_number()), 
                            trim_ws = TRUE); rm(wd)
+
 names(cups_per_day)[1] <- "PLZ"
 names(cups_per_day)[2] <- "PLZ_Name"
 cups_per_day$PLZ <- as.integer(cups_per_day$PLZ)
