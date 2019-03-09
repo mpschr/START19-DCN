@@ -1,0 +1,119 @@
+---
+title: "Analytics_Map"
+output: html_document
+---
+
+```{r setupMapP}
+#-------------- LOAD LIBRARIES --------------#
+library(leaflet)
+library(sf)
+library(rgdal)
+library(maps)
+library(tidyr)
+library(dplyr)
+library(viridis)
+
+
+#-------------- LOAD SHAPE --------------#
+shapeData <- sf::read_sf(dsn = "./Shapefile_PLZ", layer = "PLZO_PLZ", as_tibble = F)
+#shapeData <- sf::st_read(dsn = "./Shapefile_PLZ", layer = "PLZO_PLZ", as_tibble = F)
+#shapeData <- sf::st_read("./Shapefile_PLZ", "PLZO_PLZ", stringsAsFactor = F)
+# shapeData <- rgdal::readOGR("./Shapefile_PLZ", "PLZO_PLZ", stringsAsFactor = F)
+
+
+#-------------- TRANSFORM --------------#
+
+shapeData <- shapeData %>% select('PLZ', 'geometry')
+shapeData <- st_transform(shapeData, "+proj=longlat +ellps=WGS84 +datum=WGS84")
+# projection(shapeData) <- "+init=epsg:4326"
+# # CONVERT SHAPE DATA
+#shapeData = spTransform(shapeData, CRS("+proj=longlat +datum=WGS84 +no_defs +init=epsg:4326"))
+# shapeTransf <- spTransform(shapeData, CRS("+proj=longlat +datum=WGS84"))
+#st_sf(shapeData)
+
+
+
+extractCoord <- function(PLZ) {
+  index <- which(shapeData$PLZ == PLZ)
+  x <- shapeData[index, "geometry"][[1]][[1]]
+  x <- data.frame(x[[1]])
+  colnames(x) <- c('lng', 'lat')
+  x <- data.frame(x)
+  x$PLZ <- PLZ
+  return(x)
+}   # Function to get polygons
+
+extractCoordList <- function(plzList){
+  # FUNCTION THAT EXTRACTS THE LONG/LAT VALUES FOR A LIST OF PLZs AND OUTPUTS 
+  # A DATA FRAME WITH LONG/LAT/PLZ
+  
+  # INITZATE TEMP DATA FRAME TO SAVE GEO DATA
+  temp_plz_df <- data.frame()
+  
+  for(plz in plzList){
+    # Extract coord long/lat for current plz
+    temp_plz_coord <- extractCoord(plz)
+    
+    if(nrow(temp_plz_df != 0)){
+      # Only proceed if the loop is in the second iteration
+      # E.G. temp_plz_df != 0,0
+      temp_plz_df[nrow(temp_plz_df)+1,] <- NA
+    } # End add empty row
+    
+    # Combine with previous coordinates
+    temp_plz_df <- rbind(temp_plz_df, NULL, temp_plz_coord)
+  }
+  
+  # RETRUN LIST OF PLZ & LONG/LAT
+  return(temp_plz_df)
+  
+}   # END OF FUNCTION extractCoordList
+```
+
+```{r loadMap}
+# LOAD DF FOR RELEVANT PLZ
+plzList <- shapeData$PLZ[1:5]
+plz_to_Map <- extractCoordList(plzList)
+
+# ADD VALUES TO PLZ FOR COLOR TESTING
+plz_val <- subset(unique(plz_to_Map$PLZ), !is.na(unique(plz_to_Map$PLZ))) %>% data.frame()
+plz_val$traffic <- sample(1:5000, 5)
+names(plz_val)[1] <- 'PLZ'
+
+
+# MAP VALUES TO PLZ
+plz_to_Map <- left_join(x = plz_to_Map, y = plz_val, by = 'PLZ')
+
+# CREATE A COLOR BIN
+# pal <- colorNumeric(
+#   palette = "viridis",
+#   domain = range(1, 50000),
+#   na.color = "#808080")
+
+bins <- c(0, 1000, 2000, 3000, 4000, 5000)
+pal <- colorBin("viridis", domain = plz_to_Map$traffic, bins = bins)
+
+
+# INITIATE MAP
+m <- leaflet(plz_to_Map) %>%
+  addTiles() %>%  setView(lng = 7.576831, lat = 45.98940, zoom = 8) %>%
+  # CartoDB.Positron for grey
+  # CartoDB.DarkMatter for black
+  addProviderTiles('CartoDB.Positron') %>% 
+  addPolygons(lng = plz_to_Map$lng , lat = plz_to_Map$lat, fillOpacity = 0.5, smoothFactor = 0.5, fillColor = ~pal(na.omit(unique(traffic))))
+
+m
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
