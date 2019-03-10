@@ -4,57 +4,50 @@ output: html_document
 author: 'Christian Kirifidis (Detecon International GmbH)' 
 ---
 
+# SBB CHALLENGE - Cup the plastic
+
+**Team:** `4 Layers`
+**Team members:** Alexandra Haas, Michael Schroeder, Sergej Bannik, Christian Kirifidis
+**Afiliated company:** Detecon Schweiz AG & Detecon International GmbH
+
+## LOAD LIBRARIES - VARIABLES - FUNCTIONS
+
+The necessary libraries are loaded (might have to be installed prior). Relevant data is loaded and map functions are initiated. 
+
 ```{r setupMapP}
 #-------------- LOAD LIBRARIES --------------#
-library(leaflet)
-library(sf)
-library(rgdal)
-library(maps)
-library(tidyr)
-library(dplyr)
-library(viridis)
+library(leaflet)   # For map building
+library(sf)   # For importing & handling geo-data
+library(rgdal)   # For importing & handling geo-data
+library(maps)   # For importing map models
+library(tidyr)   # For data manipulation & handling
+library(dplyr)   # For data manipulation & handling
+library(viridis)   # For color pallets
 
+rm(list = ls())   # Remove all objects in storage before starting
 
 #-------------- LOAD SHAPE --------------#
 shapeData <- sf::read_sf(dsn = "./Shapefile_PLZ", layer = "PLZO_PLZ", as_tibble = F)
-#shapeData <- sf::st_read(dsn = "./Shapefile_PLZ", layer = "PLZO_PLZ", as_tibble = F)
-#shapeData <- sf::st_read("./Shapefile_PLZ", "PLZO_PLZ", stringsAsFactor = F)
-# shapeData <- rgdal::readOGR("./Shapefile_PLZ", "PLZO_PLZ", stringsAsFactor = F)
 
 
 #-------------- LOAD Data --------------#
 # Load data about cup consumptionn per day
-wd <- getwd() %>% gsub(pattern = '/03\ Data\ Analytics/.*', replace = '') 
-cups_per_day <- read_delim(paste0(wd, "/04\ Git/START19-DCN/data_analysis/cups_per_day.tsv"),
-                           "\t",
-                           escape_double = FALSE, 
-                           col_types = cols(`PLZ To` = col_number()), 
-                           trim_ws = TRUE); rm(wd)
-
+cups_per_day <- read_delim("~/Desktop/StartHack/04 Git/START19-DCN/data_analysis/cups_per_day.tsv", "\t", escape_double = FALSE, col_types = cols(`PLZ To` = col_number()), trim_ws = TRUE)
+# Adapt column names and data types
 names(cups_per_day)[1] <- "PLZ"
 names(cups_per_day)[2] <- "PLZ_Name"
 cups_per_day$PLZ <- as.integer(cups_per_day$PLZ)
 
 
-# cups_per_day$PLZ.To <- as.numeric(cups_per_day$PLZ.To)  # Convert type
-
-
 #-------------- TRANSFORM --------------#
-
+# LOAD POLYGONS FOR PLZ IN SWITZERLAND
 shapeData <- shapeData %>% select('PLZ', 'geometry')
 shapeData <- st_transform(shapeData, "+proj=longlat +ellps=WGS84 +datum=WGS84")
-# projection(shapeData) <- "+init=epsg:4326"
-# # CONVERT SHAPE DATA
-#shapeData = spTransform(shapeData, CRS("+proj=longlat +datum=WGS84 +no_defs +init=epsg:4326"))
-# shapeTransf <- spTransform(shapeData, CRS("+proj=longlat +datum=WGS84"))
-#st_sf(shapeData)
-
-
-
 
 
 extractCoord <- function(PLZ) {
-  
+  # This funciton extracs the geometry information and
+  # saves it in a data frame object for a given plz
   index <- which(shapeData$PLZ == PLZ)
   x <- shapeData[index, "geometry"][[1]][[1]]
   x <- data.frame(x[[1]])
@@ -66,15 +59,15 @@ extractCoord <- function(PLZ) {
 
 
 extractCoordList <- function(plzList){
-  # FUNCTION THAT EXTRACTS THE LONG/LAT VALUES FOR A LIST OF PLZs AND OUTPUTS 
-  # A DATA FRAME WITH LONG/LAT/PLZ
-  
+  # This function extracts the geometry information for a 
+  # list of plzs
   
   # INITZATE TEMP DATA FRAME TO SAVE GEO DATA
   temp_plz_df <- data.frame()
   
   for(plz in plzList){
-    
+    # Goes through the list of plzs and creates a
+    # df with geoinformation
     if(is.na(plz)|!plz %in% shapeData$PLZ){
       next
     }
@@ -100,7 +93,9 @@ extractCoordList <- function(plzList){
 
 
 
+## INITIATE DATA ENRICHED MAP 
 
+In this step the traffic data of commutes is merged with the polygon information of the plzs. Then the map is initiated and stored for further ploting. 
 
 ```{r loadMap}
 # LOAD DF FOR RELEVANT PLZ
@@ -135,18 +130,20 @@ m <- leaflet(plz_to_Map) %>%
   # CartoDB.DarkMatter for black
   addProviderTiles('CartoDB.Positron') %>% 
   addPolygons(lng = plz_to_Map$lng , lat = plz_to_Map$lat, opacity = 0, fillOpacity = 0.8, smoothFactor = 0, color = ~pal(na.omit(unique(bins)))) %>% addLegend("bottomright", pal = pal, values = bins, title = "Number of Cups", opacity = 1)
+```
 
+
+## MAP PLOT
+
+The map object was stored in the `m` object. This can be plotted or further enriched using `leaflet pipeline operations`. 
+
+```{r plotMap}
+# Plot the map object
 m
 ```
 
 
 
-
-
-
-
-
-
-
+`#--------------------------------------- END OF SCRIPT ---------------------------------------#` 
 
 
