@@ -14,6 +14,11 @@ author: 'Christian Kirifidis (Detecon International GmbH)'
 
 The necessary libraries are loaded (might have to be installed prior). Relevant data is loaded and map functions are initiated. 
 
+**Sources:**
+- Shapefiles: https://opendata.swiss/de/dataset/amtliches-ortschaftenverzeichnis-mit-postleitzahl-und-perimeter
+
+- MapModel background: https://carto.com/
+
 ```{r setupMapP}
 #-------------- LOAD LIBRARIES --------------#
 library(leaflet)   # For map building
@@ -27,12 +32,13 @@ library(viridis)   # For color pallets
 rm(list = ls())   # Remove all objects in storage before starting
 
 #-------------- LOAD SHAPE --------------#
+# SOURCE FOR PLZ SHAPEFILES ADMINN.CHB
 shapeData <- sf::read_sf(dsn = "./Shapefile_PLZ", layer = "PLZO_PLZ", as_tibble = F)
 
 
 #-------------- LOAD Data --------------#
 # Load data about cup consumptionn per day
-cups_per_day <- read_delim("~/Desktop/StartHack/04 Git/START19-DCN/data_analysis/cups_per_day.tsv", "\t", escape_double = FALSE, col_types = cols(`PLZ To` = col_number()), trim_ws = TRUE)
+cups_per_day <-  readr::read_delim("~/Desktop/StartHack/04 Git/START19-DCN/data_analysis/cups_per_day.tsv", "\t", escape_double = FALSE, col_types = cols(`PLZ To` = col_number()), trim_ws = TRUE)
 # Adapt column names and data types
 names(cups_per_day)[1] <- "PLZ"
 names(cups_per_day)[2] <- "PLZ_Name"
@@ -103,20 +109,10 @@ plzList <- unique(cups_per_day$PLZ)
 plzList <- na.omit(plzList)
 plz_to_Map <- extractCoordList(plzList)
 
-# ADD VALUES TO PLZ FOR COLOR TESTING
-# plz_val <- subset(unique(plz_to_Map$PLZ), !is.na(unique(plz_to_Map$PLZ))) %>% data.frame()
-# plz_val$traffic <- sample(1:5000, 5)
-# names(plz_val)[1] <- 'PLZ'
-
 
 # MAP VALUES TO PLZ
 plz_to_Map <- left_join(x = plz_to_Map, y = cups_per_day, by = 'PLZ')
 
-# CREATE A COLOR BIN
-# pal <- colorNumeric(
-#   palette = "viridis",
-#   domain = range(1, 50000),
-#   na.color = "#808080")
 
 bins <- c(0, 50, 200, 1000, 10000, 100000)
 pal <- colorBin("Reds", domain = plz_to_Map$traffic, bins = bins)
