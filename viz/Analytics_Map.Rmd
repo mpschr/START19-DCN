@@ -15,7 +15,7 @@ author: 'Christian Kirifidis (Detecon International GmbH)'
 The necessary libraries are loaded (might have to be installed prior). Relevant data is loaded and map functions are initiated. 
 
 **Sources:**
-- Shapefiles: https://opendata.swiss/de/dataset/amtliches-ortschaftenverzeichnis-mit-postleitzahl-und-perimeter
+- Shapefiles: https://opendata.swiss/de/dataset/amtliches-ortschaftenverzeichnis-mit-postleitzahl-und-perimeter  & https://www.cadastre.ch/de/services/service/plz.html
 
 - MapModel background: https://carto.com/
 
